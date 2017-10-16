@@ -5,10 +5,12 @@ using UnityEngine.UI;
 using Firebase;
 using Firebase.Database;
 using Firebase.Unity.Editor;
-
+using System;
+using System.Reflection;
 
 public class QuizQuestionBehaviour : MonoBehaviour {
 
+    
     public Text questionText, userpoints , topicTitle, exerciseTtile, questionStatus, buttonText, answerStatus;    
     public Image correctIcon, wrongIcon;
     public Button answerBtn;
@@ -16,25 +18,70 @@ public class QuizQuestionBehaviour : MonoBehaviour {
     private bool newQuestion;
     public Sprite OffSprite, OnSprite;
     private DatabaseReference _databaseReference;
-    private string path = "Questions/Topic/Solat/se2";
+    public string path = "Questions/Topic/Solat/se2";
     private string answerPath = "/Student_Users/1/Stud_Answer/Topic/Solat/se1/q1/";
     private string answer,q;
     private bool statusJawapan, buttonClicked;
     private int i = 1;
-    public string questionNumber = "q" +1;
+    private string questionPoints;   
+    private int parseQuestionPoints;
+    private string parseCorrectAnswer;
+    private int studPoints = 0;
+    private string questionNumber = "q" +1;
+
+
+    /*-------------------------------------------------------------------------------------------------------------*/
+    //calculate accumulated points
+    public int calculatePoints()
+    {
+        parseQuestionPoints = Int32.Parse(questionPoints);
+
+        if (statusJawapan == true)
+                {
+                    studPoints += parseQuestionPoints;
+                    Debug.Log(studPoints);
+                }
+
+                else
+                {
+                    studPoints += 0;
+                    Debug.Log(studPoints);
+
+                }
+
+        return studPoints;
+    }
+
+    //isCorrect or not
+    public bool isCorrect()
+    {
+        if (answerInput.text == parseCorrectAnswer)
+        {
+            statusJawapan = true;
+            calculatePoints();
+            Answer_CorrectOutput();
+           
+        }
+
+        else
+        {
+            statusJawapan = false;
+            calculatePoints();
+            Answer_WrongOutput();
+        }
+        return statusJawapan;
+    }
 
     /*-------------------------------------------------------------------------------------------------------------*/
     //behaviour of interface
     public void ChangeImageButton()
     {
-        if (answerBtn.image.sprite == OnSprite && answerInput.text != null)
+        if (answerBtn.image.sprite == OnSprite)
         {
             answerBtn.image.sprite = OffSprite;
             buttonText.text = "Submit";
             newQuestion = true;
             Debug.Log(newQuestion);
-
-          
         }
 
         else 
@@ -42,11 +89,7 @@ public class QuizQuestionBehaviour : MonoBehaviour {
             answerBtn.image.sprite = OnSprite;
             buttonText.text = "Next";
             newQuestion = false;
-            Debug.Log(newQuestion);
-            //Next_Question();
-
-           
-
+            Debug.Log(newQuestion);           
         }
     }
 
@@ -55,7 +98,6 @@ public class QuizQuestionBehaviour : MonoBehaviour {
     {
         correctIcon.enabled = false;
         wrongIcon.enabled = false;
-
     }
     
     public void Answer_CorrectOutput()
@@ -63,6 +105,7 @@ public class QuizQuestionBehaviour : MonoBehaviour {
         answerStatus.text = "Correct !";
         answerStatus.color = Color.green;
         correctIcon.enabled= true;
+        statusJawapan = true;
     }
 
     public void Answer_WrongOutput()
@@ -72,35 +115,22 @@ public class QuizQuestionBehaviour : MonoBehaviour {
         wrongIcon.enabled = true;       //show wrong icon
         Text text = answerInput.transform.FindChild("Text").GetComponent<Text>(); //change text in input field to red when wrong
         text.color = Color.red;
+        statusJawapan = false;
+
 
     }
 
     public void Button_OnClick()
     {
-        buttonClicked = true;
-        Answer_WrongOutput();   
-        //Changes the button's Normal color to the new color.
-        //answerBtn.image.color = Color.blue;
+       // buttonClicked = true;        
+        isCorrect();        
         ChangeImageButton();
-        Next_Question();
-        //Debug.Log(newQuestion);
-
-        //grab student answer and answer status
-        /*answer = answerInput.text;
-        q = "q1";
-        Debug.Log(answer);
-        statusJawapan = false;
-        Debug.Log(statusJawapan);*/
-
-        //Write_StudentAnswer(  "q1" , answerInput.text, statusJawapan);
-
-
+        Next_Question();        
     }
 
+    //display question
     public string Next_Question()
     {
-       
-        
         if (newQuestion == true )
         {
             //for(int i=0; i<11; i++)
@@ -110,10 +140,13 @@ public class QuizQuestionBehaviour : MonoBehaviour {
                 Debug.Log(questionNumber);
                 buttonClicked = false;
                 newQuestion = false;
+                Hide();
+                answerStatus.text = "";
+                answerInput.text = "";
+                Text text = answerInput.transform.FindChild("Text").GetComponent<Text>(); //reset color font to black
+                text.color = Color.black;
             }
-
             
-
         }
 
         return questionNumber;
@@ -126,27 +159,31 @@ public class QuizQuestionBehaviour : MonoBehaviour {
 
         // Get the root reference location of the database.
         _databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
+
+        //question display
         newQuestion = false;
-        ReadQuestion(questionNumber);
+        //ReadQuestion(questionNumber);
 
         //hide element
         Hide();
+
         Debug.Log(newQuestion);
+
         //answer button action
         Button button = answerBtn.GetComponent<Button>();
         button.onClick.AddListener(Button_OnClick);
 	}
 	
 	// Update is called once per frame
-	void Update () {
-        //Next_Question();
+	void Update ()
+    {
         ReadQuestion(questionNumber);
-	}
+    }
 
     /*-------------------------------------------------------------------------------------------------------------*/
 
     //Reading questions from Firebase Database
-    void ReadQuestion(string qid)
+    string ReadQuestion(string qid) // I CHANGE TO STRING FROM INT
     {
         FirebaseDatabase.DefaultInstance.GetReference(path).Child(questionNumber).GetValueAsync().ContinueWith(task =>
         {
@@ -162,26 +199,61 @@ public class QuizQuestionBehaviour : MonoBehaviour {
                 string json3 = snapshot.Child("question_point").GetRawJsonValue();
                 string json4 = snapshot.Child("correct_answer").GetRawJsonValue();
 
+                //questionPoints = Int32.Parse(json3); //COMMENTED THIS
+                questionPoints = json3; 
 
 
                 // var index = json1.Length;
 
                 questionText.text = json1 + ". " +json2.Trim("\"".ToCharArray());
-                userpoints.text = json3 + " points";
+                userpoints.text = studPoints + " points";
                 
 
                 Debug.Log("Question " + json1 + ": " + json2);
+
+                parseCorrectAnswer = json4.Trim("\"".ToCharArray());
+
+                Debug.Log("Answer " + parseCorrectAnswer);
             }
         }
             );
+        return questionPoints;
+#pragma warning disable CS0162 // Unreachable code detected
+        return parseCorrectAnswer;
+#pragma warning restore CS0162 // Unreachable code detected
+
     }
+
+   /* string ReadQuestion1(string qid)
+    {
+        FirebaseDatabase.DefaultInstance.GetReference(path).Child(questionNumber).GetValueAsync().ContinueWith(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("Failure");
+            }
+            else if (task.IsCompleted)
+            {
+                DataSnapshot snapshot = task.Result;
+                string json5 = snapshot.Child("correct_answer").GetRawJsonValue();
+
+                parseCorrectAnswer = json5.Trim("\"".ToCharArray());
+                
+                Debug.Log("Answer " + parseCorrectAnswer);
+            }
+        }
+            );
+        return parseCorrectAnswer;
+    }*/
+
+    
 
     /*-------------------------------------------------------------------------------------------------------------*/
 
     //Writing student answers into Firebase Database
     //STILL CANNOT !!
 
-    public class NewAnswer{
+    /*public class NewAnswer{
 
         private string stud_answer, question;
         private bool isCorrect;
@@ -223,4 +295,5 @@ public class QuizQuestionBehaviour : MonoBehaviour {
         //          .Child (questId.ToString ())
         //          .SetValueAsync (isCompleted);
     }
+    */
 }
