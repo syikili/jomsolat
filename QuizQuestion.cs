@@ -1,4 +1,11 @@
-﻿using System.Collections;
+/*
+* able to write into firebase but cannot add new
+* question. it keeps updating the same node.
+*
+*
+*/
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
