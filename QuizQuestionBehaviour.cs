@@ -1,4 +1,16 @@
-﻿using System.Collections;
+/*
+* able to calculate score points
+*read question and answers
+*determine if the question is right or wrong
+*
+*PROBLEMS
+*unable to stop after the last question
+*unable to save student answers, points to firebase
+*the question indicator not functional
+*hints not available yet
+*no timer
+*/
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
