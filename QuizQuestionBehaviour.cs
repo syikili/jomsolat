@@ -20,28 +20,32 @@ public class QuizQuestionBehaviour : MonoBehaviour {
     private string answerPath = "/Student_Users/1/Stud_Answer/Topic/Solat/se1/q1/";
     private string answer,q;
     private bool statusJawapan, buttonClicked;
-    private int i = 0;
+    private int i = 1;
     public string questionNumber = "q" +1;
 
     /*-------------------------------------------------------------------------------------------------------------*/
     //behaviour of interface
     public void ChangeImageButton()
     {
-        if (answerBtn.image.sprite == OnSprite)
-        {                   
+        if (answerBtn.image.sprite == OnSprite && answerInput.text != null)
+        {
             answerBtn.image.sprite = OffSprite;
             buttonText.text = "Submit";
-            newQuestion = false;
+            newQuestion = true;
             Debug.Log(newQuestion);
+
+          
         }
 
         else 
         {
             answerBtn.image.sprite = OnSprite;
             buttonText.text = "Next";
-            newQuestion = true;
+            newQuestion = false;
             Debug.Log(newQuestion);
             //Next_Question();
+
+           
 
         }
     }
@@ -97,7 +101,7 @@ public class QuizQuestionBehaviour : MonoBehaviour {
     {
        
         
-        if (newQuestion == true && buttonClicked == true)
+        if (newQuestion == true )
         {
             //for(int i=0; i<11; i++)
             {
@@ -122,12 +126,12 @@ public class QuizQuestionBehaviour : MonoBehaviour {
 
         // Get the root reference location of the database.
         _databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
-
+        newQuestion = false;
         ReadQuestion(questionNumber);
 
         //hide element
         Hide();
-
+        Debug.Log(newQuestion);
         //answer button action
         Button button = answerBtn.GetComponent<Button>();
         button.onClick.AddListener(Button_OnClick);
@@ -162,7 +166,7 @@ public class QuizQuestionBehaviour : MonoBehaviour {
 
                 // var index = json1.Length;
 
-                questionText.text = json2.Trim("\"".ToCharArray());
+                questionText.text = json1 + ". " +json2.Trim("\"".ToCharArray());
                 userpoints.text = json3 + " points";
                 
 
